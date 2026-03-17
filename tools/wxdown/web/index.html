@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content=width=device-width, initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,
+          user-scalable=no">
+    <title>WXDOWN</title>
+    <link rel="icon" href="/logo.png" type="image/x-icon">
+    <meta name="description" content="文章采集站，支持微信公众号文章采集，支持批量采集，支持批量下载，支持批量转PDF">
+    <link rel="stylesheet" href="static/css/main.css">
+</head>
+<body>
+<button class="hide fun-but " id="show">️▶️</button>
+<aside>
+    <!-- 公众号-->
+    <nav>
+        <div class="task">
+            <div class="box">
+                <div id="task" style="overflow: hidden;">
+                    <span class="mtask">📁</span>采集任务
+                </div>
+                <div>
+                    <button class="fun-but" title="刷新" onclick="javascript:window.location.reload()">🔄</button>
+                    <button class="sidebar-toggle fun-but" title="收起来" aria-label="收起来">◀️</button>
+                </div>
+            </div>
+            <div>
+                <input id="search" type="search" placeholder="请输入名称或时间">
+            </div>
+        </div>
+        <ul id="wx-menus">
+
+        </ul>
+    </nav>
+    <!--  文件列表  -->
+    <nav class="details">
+        <div style="padding: 0 10px;position: sticky;top: 0">
+            <input id="search-html" type="search" placeholder="请输入名称或时间"></div>
+        <ul id="wx-article"></ul>
+    </nav>
+</aside>
+<main>
+    <section id="section" style="max-width: 1024px;margin: 0 auto;padding: 10px">
+        <div style="text-align: center;user-select: none">
+            <div class="cus-logo" style="">
+                WXD<span>WXD</span>
+            </div>
+            <p>公众号文章采集</p>
+        </div>
+
+        <form>
+            <label for="folder">目录名称（可选）</label>
+            <input type="text" id="folder" name="folder" list="foodList" placeholder="输入自定义目录名称">
+            <datalist id="foodList">
+            </datalist>
+            <label for="collectAddress">采集地址（必填）;增量获取自动获取剪切板内容，需要先点击一次下面输入框。</label>
+            <textarea id="collectAddress" name="urls" placeholder=""></textarea>
+            <div style="display: flex;gap: 20px;">
+                <button type="submit">采集</button>
+                <button type="reset">重置</button>
+            </div>
+        </form>
+
+        <hr>
+        <div id="stats" class="stats">
+            <p>🧊<strong>资源列表</strong></p>
+            <ul>
+                <li>✅图片</li>
+                <li>✅视频</li>
+                <li>✅音频</li>
+                <li>✅HTML</li>
+            </ul>
+            <p>🧊<strong>功能列表</strong></p>
+            <ul>
+                <li>✅HTML 转 PDF</li>
+                <li>✅单个采集接口</li>
+                <li>✅批量采集接口</li>
+                <li>✅支持并发采集</li>
+            </ul>
+            <p>🧊<strong>数据来源</strong></p>
+            <ul>
+                <li>✅<a target="_blank" href="help.html#首页合集">首页合集</a></li>
+                <li>✅<a target="_blank" href="help.html#标签合集">标签合集</a></li>
+                <li>✅单个链接</li>
+            </ul>
+        </div>
+        <p><a href="https://github.com/systemmin/wxdown/issues" target="_blank">GitHub Bug 反馈</a></p>
+        <p><a href="https://gitee.com/bxmms/wxdown/issues" target="_blank">Gitee Bug 反馈</a></p>
+
+    </section>
+    <iframe id="iframe" name="iframe" width="100%" src="images.html" frameborder="0"></iframe>
+</main>
+
+<script src="https://hm.baidu.com/hm.js?69bc11719d31206cbc65c13979ea5c69"></script>
+<script src="js/api.js"></script>
+<script>
+    let tips = "1.输入一个或多个链接，每个链接单独一行。例如：\n";
+    tips += "2.单个链接。例如：https://mp.weixin.qq.com/s/xxxxxx\n";
+    tips += "3.首页合集链接前缀。例如：https://mp.weixin.qq.com/mp/homepage\n";
+    tips += "4.标签合集链接前缀。例如：https://mp.weixin.qq.com/mp/appmsgalbum\n";
+    tips += "5.合集链接支持一个，不支持多个链接。\n";
+    document.getElementById('collectAddress').placeholder = tips;
+
+    const showToast = (message, duration) => {
+        const styles = {
+            "position": "fixed",
+            "top": "20px",
+            "left": "50%",
+            "transform": "translateX(-50%)",
+            "z-index": 9999,
+            "background-color": "#333",
+            "color": "#fff",
+            "padding": "10px 20px",
+            "border-radius": "5px",
+            "text-align": "center",
+            "transition": "opacity 0.3s"
+        };
+        // 创建轻提示元素
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        for (let key of Object.keys(styles)) {
+            toast.style[key] = styles[key];
+        }
+        // 将轻提示添加到页面中
+        document.body.append(toast);
+        // 隐藏轻提示
+        setTimeout(function () {
+            setTimeout(function () {
+                document.body.removeChild(toast);
+            }, 300);
+        }, duration || 1000);
+    }
+
+    const api = new API();
+    // 发起一个 articles get 请求获取文章列表
+    const details = document.querySelector('.details');
+    const iframe = document.getElementById('iframe');
+    const section = document.getElementById('section');
+    const wxArticle = document.getElementById('wx-article');
+    const wxMenus = document.getElementById('wx-menus');
+    iframe.style.display = 'none'; // 隐藏 iframe
+    section.style.display = 'block'; // 采集页面
+    details.style.display = 'none'; // 采集页面
+    // 改变 main 元素的宽度
+    const changeMainWidth = () => {
+        const width = document.documentElement.clientWidth;
+        const clientWidth = document.querySelector("aside").clientWidth;
+        if (width < 768) {
+
+        } else {
+            document.querySelector("main").style.marginLeft = clientWidth + "px";
+        }
+    }
+    // 改变 main 元素的宽度
+    const blockShow = () => {
+        details.style.display = 'block'; // 显示文章列表
+        iframe.style.display = 'block'; // 显示 iframe
+        section.style.display = 'none'; // 隐藏采集页面
+    }
+    // 隐藏或显示元素
+    const showOrHide = () => {
+        document.querySelector('aside').classList.toggle('hide')
+        document.getElementById('show').classList.toggle('hide')
+        changeMainWidth()
+    }
+
+    // 创建 dom
+    function CH() {
+        const args = arguments;
+        const dom = document.createElement(args[0]);
+        if (args.length > 1 && args[1]) {
+            dom.id = args[1];
+        }
+        if (args.length > 2) {
+            dom.innerText = args[2];
+        }
+        if (args.length > 3 && args[3]) {
+            dom.className = args[3];
+        }
+        if (args.length > 4 && args[4]) {
+            dom.dataset[args[4].key] = args[4].value;
+        }
+        return dom
+    }
+
+    /**
+     * 获取文件夹列表
+     */
+    const getFolders = async () => {
+        try {
+            // const folders = await fetch('ats/').then(res => res.json());
+            const {data: folders} = await api.get('ats/');
+            if (folders.length) {
+                localStorage.setItem("folders", JSON.stringify(folders))
+                return folders;
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    const getFoldersDetails = async (folder, fType) => {
+        try {
+            const {data: folders} = await api.get(`ats/${folder}/${fType}`);
+            if (folders.length) {
+                localStorage.setItem("foldersDetails", JSON.stringify(folders))
+                return folders;
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    const onFolderEvent = async (event, fType) => {
+        blockShow()
+        changeMainWidth()
+        const target = event.target;
+        // 获取当前点击的元素
+        const active = document.querySelector('.active');
+        // 如果当前元素有 active 类名，则移除
+        if (active) {
+            active.classList.remove('active');
+        }
+        let listData = [];
+        if (!fType) {
+            listData = await getFoldersDetails(target.dataset.name, "html");
+        } else {
+            listData = await getFoldersDetails(target.parentElement.dataset.name, "pdf");
+        }
+        const length = listData ? listData.length : 0;
+        let rootDom = target.parentElement;
+        if (target.className === "wx-title") {
+        } else if (target.tagName === "BUTTON") {
+            rootDom = target.parentElement.parentElement;
+        }
+        if (rootDom.lastElementChild.tagName !== "SPAN") {
+            rootDom.append(CH("span", "", length, "badge"))
+        } else {
+            rootDom.lastElementChild.innerHTML = length
+        }
+        // 给当前元素添加 active 类名
+        rootDom.classList.add('active');
+        if (length) {
+            const listStr = listData.map((item) => {
+                return `<li><time style="color:#fff;font-size: 12px">${item.cteTime}</time><br><a target="iframe" href="${item.link}">${item.original}</a></li>`
+            }).join('')
+            wxArticle.innerHTML = `<ul>${listStr}</ul>`
+        } else {
+            wxArticle.innerHTML = '<p style="color: #FFF;text-align: center">暂无数据!</p>';
+        }
+        return true
+    }
+    const onOpenEvent = async (event) => {
+        const name = event.dataset.name;
+        const folder = event.parentElement.dataset.name;
+        const listData = await getFoldersDetails(folder, name);
+        iframe.style.display = 'block'; // 显示 iframe
+        section.style.display = 'none'; // 隐藏采集页面
+        details.style.display = 'none'; // 隐藏采集页面
+
+        const active = document.querySelector('.active');
+        // 如果当前元素有 active 类名，则移除
+        if (active) {
+            active.classList.remove('active');
+        }
+        const length = listData ? listData.length : 0;
+        let rootDom = event.parentElement.parentElement;
+        if (rootDom.lastElementChild.tagName !== "SPAN") {
+            rootDom.append(CH("span", "", length, "badge"))
+        } else {
+            rootDom.lastElementChild.innerHTML = length
+        }
+        // 给当前元素添加 active 类名
+        rootDom.classList.add('active');
+        changeMainWidth();
+        iframe.src = name + '.html'
+        setTimeout(() => {
+            iframe.contentWindow.postMessage(JSON.stringify(listData))
+
+        }, 100)
+        return true
+    }
+    const rendering = (folders) => {
+        wxArticle.innerHTML = ''
+        wxMenus.innerHTML = "";
+        folders.forEach((item, i) => {
+            let li = CH("li");
+            li.tabIndex = i;
+
+            let folder = CH("div", "folder-" + i, item.name, "wx-title", {key: 'name', value: item.name});
+            folder.className = "wx-title"
+            folder.addEventListener('click', (e) => onFolderEvent(e))
+
+            let open = CH("div", "open-" + i, "", "open", {key: 'name', value: item.name});
+            open.className = "open"
+
+            let audios = CH("button", null, "🔊", "open-event", {key: 'name', value: "audios"});
+            audios.title = "音频"
+            audios.onclick = function () {
+                onOpenEvent(this)
+            }
+            let videos = CH("button", null, "🎬", "open-event", {key: 'name', value: "videos"});
+            videos.title = "视频"
+            videos.onclick = function () {
+                onOpenEvent(this)
+            }
+            let images = CH("button", null, "🖼️", "open-event", {key: 'name', value: "images"});
+            images.title = "图片"
+            images.onclick = function () {
+                onOpenEvent(this)
+            }
+            let folders = CH("button", null, "📂", "open-event", {key: 'name', value: "folder"});
+            folders.title = "打开文件夹"
+            folders.onclick = function () {
+                api.get("open/" + this.parentElement.dataset.name)
+            }
+            let pdf = CH("button", null, "📝", "open-event", {key: 'name', value: "pdfs"});
+            pdf.title = "PDF"
+            pdf.addEventListener('click', (e) => onFolderEvent(e, "pdfs"))
+
+            open.append(audios)
+            open.append(videos)
+            open.append(images)
+            open.append(pdf)
+            open.append(folders)
+
+
+            li.append(folder)
+            li.append(open)
+            wxMenus.append(li);
+        })
+    }
+    const init = async () => {
+        const folders = await getFolders();
+        let opts = '';
+        folders.forEach(item => {
+            opts += `<option value="${item.name}"></option>`;
+        })
+        document.getElementById('foodList').innerHTML = opts;
+        rendering(folders);
+    }
+    // 读取剪切板
+    const readClipboardText = async () => {
+        try {
+            // 请求剪切板的读取权限
+            const permission = await navigator.permissions.query({name: "clipboard-read"});
+            if (permission.state === "granted" || permission.state === "prompt") {
+                // 读取剪切板中的文本
+                const text = await navigator.clipboard.readText();
+                if (!text || !text.includes("https://mp.weixin.qq.com")) {
+                    return
+                }
+                const urlNode = document.getElementById('collectAddress');
+                const urlText = urlNode.value;
+                let old = [];
+                if (urlText) {
+                    old = urlText.split("\n").filter(item => item.length > 0).map(item => item.trim());
+                }
+                const set = new Set(old);
+                if (text && text.trim()) {
+                    set.add(text.trim())
+                }
+                const arrayStr = [...set].join("\n");
+                urlNode.value = arrayStr;
+            } else {
+                console.error("Clipboard read permission is denied.");
+            }
+        } catch (error) {
+            console.error("Failed to read clipboard contents: ", error);
+        }
+    }
+
+
+    // 匿名函数
+    (() => {
+        init()
+        // 调用函数
+        readClipboardText();
+    })()
+
+    // 监听页面返回
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) {
+            readClipboardText()
+        }
+    });
+
+    // 聚焦事件
+    document.getElementById('collectAddress').addEventListener("focus", () => {
+        readClipboardText()
+    })
+
+
+    // 采集任务
+    document.getElementById('task').addEventListener('click', () => {
+        section.style.display = 'block'
+        iframe.style.display = 'none';
+        details.style.display = 'none';
+        changeMainWidth()
+    })
+
+    // 全局监听 click 点击事件
+    document.addEventListener("click", function (event) {
+        const width = document.documentElement.clientWidth;
+        if (width < 768) {
+            console.log(event.target)
+            if (event.target.tagName === 'A' || ["videos", "audios", "images"].includes(event.target.dataset.name) || event.target.id === "task") {
+                showOrHide()
+            }
+        }
+    })
+
+    // 侧边栏控制
+    document.querySelector('.sidebar-toggle').addEventListener('click', () => {
+        showOrHide()
+    })
+    // 侧边栏控制
+    document.getElementById('show').addEventListener('click', () => {
+        showOrHide()
+    })
+    // 搜索目录
+    document.getElementById('search').addEventListener('input', (event) => {
+        const listData = JSON.parse(localStorage.getItem("folders"));
+        const results = listData.filter(item => {
+            if (item.name.includes(event.target.value) || item.modTime.includes(event.target.value)) {
+                return item;
+            }
+        })
+        rendering(results)
+    })
+    // 搜索目录
+    document.getElementById('search-html').addEventListener('input', (event) => {
+        const listData = JSON.parse(localStorage.getItem("foldersDetails"));
+        const results = listData.filter(item => {
+            if (item.name.includes(event.target.value) || item.modTime.includes(event.target.value)) {
+                return item;
+            }
+        })
+        wxArticle.innerHTML = ''
+        if (results.length) {
+            const listStr = results.map((item) => {
+                return `<li><time style="color:#fff;font-size: 12px">${item.cteTime}</time><br><a target="child" href="${item.link}">${item.original}</a></li>`
+            }).join('')
+            wxArticle.innerHTML = `<ul>${listStr}</ul>`
+        } else {
+            wxArticle.innerHTML = '<p style="color: #FFF;text-align: center">暂无数据!</p>';
+        }
+    })
+
+    // 表单提交
+    document.querySelector('button[type ="submit"]').addEventListener('click', function (event) {
+        event.preventDefault()
+        console.log(event)
+        // 使用FormData对象获取表单数据
+        const formData = new FormData(event.target.form);
+
+        // 将表单数据转换为对象
+        const formObject = {};
+        formData.forEach((value, key) => {
+            formObject[key] = value;
+        });
+        console.log(formObject)
+        if (!formObject.urls) {
+            showToast("请输入采集地址")
+            return;
+        }
+        const urls = formObject.urls;
+        const listUrl = [];
+        // urls 拆分 判断多个 url 是否属于微信
+        if (urls.split("\n").length > 0) {
+            const urlsArr = urls.split("\n");
+            urlsArr.forEach(item => {
+                if (item) {
+                    try {
+                        const url = new URL(item);
+                        if (url.host !== "mp.weixin.qq.com") {
+                            showToast("不支持除了 WX 以外链接！");
+                            return;
+                        } else {
+                            listUrl.push(item)
+                        }
+                    } catch (e) {
+                        showToast("无效URL！");
+                        return
+                    }
+                }
+            })
+        }
+        formObject.urls = listUrl;
+        console.log(urls);
+        if (listUrl.length === 1 && (listUrl[0].includes("appmsgalbum") || listUrl[0].includes("homepage"))) {
+            api.post("collect/", formObject).then(data => {
+                if (data.success) {
+                    showToast("采集完成");
+                    setTimeout(() => {
+                        window.location.reload()
+                    }, 1000)
+                } else {
+                    showToast(data.msg);
+                }
+            })
+        } else {
+            api.post("gather/", formObject).then(data => {
+                console.log(data)
+                if (data.success) {
+                    showToast("采集完成");
+                    setTimeout(() => {
+                        window.location.reload()
+                    }, 1000)
+                } else {
+                    showToast(data.msg);
+                }
+            })
+        }
+
+    });
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,60 @@
+# 服务端口
+port: 81
+
+# 本地数据文件存储路径
+path: ./data
+
+# 启动时在默认浏览器打开
+# true | false [开启|关闭]
+browser: true
+
+# 图片转 base64 格式，系统不会下载图片，页面直接嵌入 base64 字符串
+# true | false [开启|关闭]
+base64: false
+
+# https 访问，开启后使用 https://127.0.0.1:81 访问
+# true | false [开启|关闭]
+https: false
+
+# 重复文章处理，覆盖或跳过
+# true | false [跳过|覆盖]
+override: false
+
+# HTML 转 PDF 配置
+# 下载 wkhtmltopdf 路径 https://wkhtmltopdf.org/downloads.html
+# window 环境无需下载，已包含 wkhtmltopdf.exe。
+# 如果你单独安装了 wkhtmltopdf 请删除根目录下 wkhtmltopdf.exe
+wkhtmltopdf:
+  # true | false [开启|关闭]
+  enable: true
+  # linux 例如：/usr/local/wkhtmltopdf/bin/
+  # window 例如：E:\Program Files\wkhtmltopdf\bin\
+  path:
+
+# HTML 转 word 配置
+# pandoc 官方地址：https://pandoc.org/
+# 下载 pandoc 地址 https://github.com/jgm/pandoc/releases/tag/3.6.4
+# path 可选配置
+pandoc:
+  # true | false [开启|关闭]
+  enable: false
+  # linux 例如：/usr/local/Pandoc/
+  # window 例如：C:/Program Files/Pandoc/
+  path:
+
+# 采集线程配置
+thread:
+  # 同时下载 HTML 协程数量
+  html: 10
+  # 同时下载图片协程数量
+  image: 20
+
+# http 基础认证
+auth:
+  # true | false [开启|关闭]
+  enable: false
+  # 用户 [账号:密码]
+  users:
+    - admin:123456
+    - visitor:123456
+    - test:123456

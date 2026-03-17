@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build
+dist/
+build/
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+.cache/
+
+# Docker
+.docker/
+
+# Credentials (IMPORTANT - never commit)
+*.json
+!.gitignore
+
+# WeChat article data (personal data)
+tools/wxdown/data/
+tools/nanoclaw/store/
+tools/nanoclaw/node_modules/
