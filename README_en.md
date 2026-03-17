@@ -6,6 +6,18 @@
 
 ---
 
+## Version Overview
+
+This is a "Cyber Immortality" project built around a personal data soul folder. The soul folder contains a core soul.md document along with personal text data. The soul.md forms a personality description for the user's digital twin based on that text data, serving as the agent's baseline personality. I've placed my WeChat public account articles in the article subfolder within soul, which can be updated at any time to keep personal data extensible and the agent capable of growth. On the other side are the agent's "hands and feet" — the corresponding files live in the tools folder. The main references are nanoclaw and a collection of automation scripts, enabling publishing to various social platforms powered by the personal soul files.
+
+**In theory, as long as these scripts and the user's login credentials keep running, an individual can achieve cyber immortality on social media in the digital world. The runtime of your server is the lifespan of your cyber self.**
+
+Automated Weibo posting is already functional. The tools folder also references the wxdown project, enabling batch export of WeChat public account content. If you're a WeChat public account author with a body of written work, this workflow lets you batch-export your personal data, structure it into a soul.md, and achieve your digital immortality on Weibo. The project is highly extensible overall, drawing core inspiration from Liu Xiaoben's First Paradigm of Consciousness Upload and the command-line agent capabilities of Claude Code. Docker-based nanoclaw ensures security; wxdown handles bulk text export; Playwright powers automated Weibo posting.
+
+v1.0.0 delivers initial functionality: WeChat public account article extraction via wxdown, soul.md system generation based on the First Paradigm of Consciousness Upload, local agent deployment via nanoclaw, and automated Weibo posting via Playwright. In theory, as long as this system keeps running, your digital persona can maintain your "presence" on social platforms.
+
+The split between the soul and tools folders preserves high extensibility for the open-source ecosystem. In future versions, developers can extend the Playwright scripts to support platforms like X and Jike. Personal data such as exported chat histories and crawler scripts can also be stored locally within the soul folder, structured according to the souldoc.md guide. Near-term plans include adding a state space and an interactive frontend page so users can visually see their digital self's life_state. Users will be able to choose between Strict Sync and Self-Evolution modes — in Strict Sync, your digital self develops strictly according to your consciousness token data; in Self-Evolution, your digital self freely explores and absorbs information from the world via Web_searchSkill.md.
+
 ## Philosophy
 
 This project implements the **"First Paradigm of Consciousness Uploading"** - using approximately **10MB** Mindcopy file to store a person's "consciousness," including their thinking patterns, values, and decision-making approach.
